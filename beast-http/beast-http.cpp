@@ -1,4 +1,6 @@
-﻿#include <boost/beast/http.hpp>
+﻿
+
+#include <boost/beast/http.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/version.hpp>
 #include <boost/asio.hpp>
@@ -11,6 +13,9 @@
 #include <Json/json.h>
 #include <Json/value.h>
 #include <Json/reader.h>
+#include <codecvt>
+#include <locale>
+
 
 namespace beast = boost::beast;
 namespace http = beast::http;
@@ -71,11 +76,11 @@ private:
 				response_.result(http::status::ok);
 				response_.set(http::field::server, "beast");
 				create_response();
+				break;
+			case http::verb::post:
 				response_.result(http::status::ok);
 				response_.set(http::field::server, "beast");
 				create_post_response();
-				break;
-			case http::verb::post:
 				break;
 			default:
 				response_.result(http::status::bad_request);
@@ -89,7 +94,7 @@ private:
 	void create_response() {
 		if (request_.target() == "/count") {
 			response_.set(http::field::content_type, "text/html");
-			beast::ostream(request_.body()) << "<html>\n"
+			beast::ostream(response_.body()) << "<html>\n"
 				<< "<head><title>Request count</title></head>\n"
 				<< "<body>\n"
 				<< "<h1>Request count</h1>\n"
@@ -168,6 +173,10 @@ void http_server(tcp::acceptor& acceptor, tcp::socket& socket) {
 }
 int main(){
 	try{
+	#ifdef _WIN32
+	#include <windows.h>
+		SetConsoleOutputCP(CP_UTF8);
+	#endif
 		auto const address = net::ip::make_address("127.0.0.1");
 		unsigned short port = static_cast<unsigned short>(8080);
 		net::io_context ioc{ 1 };
@@ -176,7 +185,7 @@ int main(){
 		http_server(acceptor, socket);
 		ioc.run();
 	}
-	catch (std::exception e) {
+	catch (std::exception& e) {
 		std::cerr << "ERROR:" << e.what() << std::endl;
 		return EXIT_FAILURE;
 	}
